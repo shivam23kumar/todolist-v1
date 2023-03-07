@@ -16,7 +16,7 @@ app.use(express.static("public"));
 
 
 // step-2 connecting mongoose to the server
-mongoose.connect("mongodb://127.0.0.1:27017/todolistDB");
+mongoose.connect("mongodb+srv://sk5087323:Mummypapa2123%40@cluster0.922mtyv.mongodb.net/todolistDB");
 
 
 // step-3 creating schema
@@ -33,29 +33,59 @@ const item1 = new Item({
 
 const defaultItems = [item1];
 
-Item.insertMany(defaultItems);
+
+const items=[];
 
 const workItems=[];
 
 app.get("/", function(req, res) {
+  const day = date.getDate();
+  Item.find({}).then(function(defaultItems){
+    if(defaultItems===0){
+      Item.insertMany(defaultItems);
+      res.redirect("/");
+    }else{
+      res.render("list", {listTitle: day, newListItems: defaultItems});
+    }
+  })
+  
+})
 
-const day = date.getDate();
+  
 
-  res.render("list", {listTitle: day, newListItems: workItems});
-
-});
 
 app.post("/", function(req, res){
 
-  const item = req.body.newItem;
+  const itemName = req.body.newItem;
 
+  const item = new Item({
+    name:itemName
+  })
+  item.save();
   if (req.body.list === "Work") {
     workItems.push(item);
     res.redirect("/work");
   } else {
-    workItems.push(item);
+    items.push(item);
     res.redirect("/");
   }
+});
+
+
+
+app.post("/delete", function(req, res) {
+  
+  const checkedItemId = req.body.deletion;
+  
+  Item.deleteOne({_id:checkedItemId}).then(function(){
+    console.log("Data deleted"); 
+    res.redirect("/");// Success
+  }).catch(function(error){
+      console.log(error); // Failure
+  });
+  
+
+ 
 });
 
 app.get("/work", function(req,res){
