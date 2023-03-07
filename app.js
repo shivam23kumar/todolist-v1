@@ -1,24 +1,72 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname+"/date.js");
+
+// step-1 defining mongoose
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
+
+const date = require(__dirname + "/date.js");
 
 const app = express();
-var items=[];
 
-app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({extended:true}));
+app.set('view engine', 'ejs');
+
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
-app.get("/", function(req, res){
-    let day = date.getDay();
-    res.render("list", {kindOfDay:day, newListItems:items})
-});
 
-app.post("/", function(req,res){
-    var item = req.body.newItem;
-    items.push(item);
-    res.redirect("/");
+
+// step-2 connecting mongoose to the server
+mongoose.connect("mongodb://127.0.0.1:27017/todolistDB");
+
+
+// step-3 creating schema
+const itemsSchema = new Schema({
+  name: String
 })
 
-app.listen(3000, function(){
-  console.log("Server started on port 3000.");
+// step-4 creating model
+const Item = mongoose.model("Item", itemsSchema);
+
+const item1 = new Item({
+  name:"Hit the + button to add a new item."
+})
+
+const defaultItems = [item1];
+
+Item.insertMany(defaultItems);
+
+const workItems=[];
+
+app.get("/", function(req, res) {
+
+const day = date.getDate();
+
+  res.render("list", {listTitle: day, newListItems: workItems});
+
 });
+
+app.post("/", function(req, res){
+
+  const item = req.body.newItem;
+
+  if (req.body.list === "Work") {
+    workItems.push(item);
+    res.redirect("/work");
+  } else {
+    workItems.push(item);
+    res.redirect("/");
+  }
+});
+
+app.get("/work", function(req,res){
+  res.render("list", {listTitle: "Work List", newListItems: workItems});
+});
+
+app.get("/about", function(req, res){
+  res.render("about");
+});
+
+app.listen(3000, function() {
+  console.log("Server started on port 3000");
+});
+
